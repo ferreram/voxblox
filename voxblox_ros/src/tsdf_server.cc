@@ -43,8 +43,10 @@ TsdfServer::TsdfServer(const ros::NodeHandle& nh,
 
   // Advertise topics.
   surface_pointcloud_pub_ =
+      // nh_private_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >(
+      //     "surface_pointcloud", 1, true);
       nh_private_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >(
-          "surface_pointcloud", 1, true);
+          "surface_pointcloud", 1, false);
   tsdf_pointcloud_pub_ =
       nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >("tsdf_pointcloud",
                                                               1, true);
@@ -327,16 +329,25 @@ bool TsdfServer::getNextPointcloudFromQueue(
     std::queue<sensor_msgs::PointCloud2::Ptr>* queue,
     sensor_msgs::PointCloud2::Ptr* pointcloud_msg, Transformation* T_G_C) {
   const size_t kMaxQueueSize = 10;
+
+  std::cout << "\n Call to getNextPointcloudFromQueue ! \n";
+
   if (queue->empty()) {
     return false;
   }
   *pointcloud_msg = queue->front();
+  
+  std::cout << "\n Looking for PC corresponding transform ! \n";
+
   if (transformer_.lookupTransform((*pointcloud_msg)->header.frame_id,
                                    world_frame_,
                                    (*pointcloud_msg)->header.stamp, T_G_C)) {
     queue->pop();
+    std::cout << "\n Transform Found for PointCloud! \n";
     return true;
   } else {
+    queue->pop();
+    std::cout << "\n Transform NOT Found for PointCloud! \n";
     if (queue->size() >= kMaxQueueSize) {
       ROS_ERROR_THROTTLE(60,
                          "Input pointcloud queue getting too long! Dropping "
@@ -357,6 +368,8 @@ void TsdfServer::insertPointcloud(
     last_msg_time_ptcloud_ = pointcloud_msg_in->header.stamp;
     // So we have to process the queue anyway... Push this back.
     pointcloud_queue_.push(pointcloud_msg_in);
+
+    std::cout << "\n New Point Cloud added to node queue, size : " << pointcloud_queue_.size() << "\n";
   }
 
   Transformation T_G_C;
@@ -375,7 +388,8 @@ void TsdfServer::insertPointcloud(
   }
 
   if (publish_pointclouds_on_update_) {
-    publishPointclouds();
+    // publishPointclouds();
+    publishTsdfSurfacePoints();
   }
 
   if (verbose_) {
@@ -425,6 +439,8 @@ void TsdfServer::publishAllUpdatedTsdfVoxels() {
 
 void TsdfServer::publishTsdfSurfacePoints() {
   // Create a pointcloud with distance = intensity.
+  timing::Timer ptcloud_timer("ptcloud_publish_surface_pts");
+
   pcl::PointCloud<pcl::PointXYZRGB> pointcloud;
   const float surface_distance_thresh =
       tsdf_map_->getTsdfLayer().voxel_size() * 0.75;
@@ -433,6 +449,8 @@ void TsdfServer::publishTsdfSurfacePoints() {
 
   pointcloud.header.frame_id = world_frame_;
   surface_pointcloud_pub_.publish(pointcloud);
+
+  ptcloud_timer.Stop();
 }
 
 void TsdfServer::publishTsdfOccupiedNodes() {
@@ -515,7 +533,8 @@ void TsdfServer::updateMesh() {
   publish_mesh_timer.Stop();
 
   if (publish_pointclouds_ && !publish_pointclouds_on_update_) {
-    publishPointclouds();
+    // publishPointclouds();
+    publishTsdfSurfacePoints();
   }
 }
 

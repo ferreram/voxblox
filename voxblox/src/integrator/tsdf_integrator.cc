@@ -63,6 +63,8 @@ TsdfIntegratorBase::TsdfIntegratorBase(const Config& config,
   if (config_.allow_clear && !config_.voxel_carving_enabled) {
     config_.allow_clear = false;
   }
+
+  std::cout << "\n TSDF Config : \n" << config_.print() << "\n";
 }
 
 void TsdfIntegratorBase::setLayer(Layer<TsdfVoxel>* layer) {
@@ -561,6 +563,8 @@ void FastTsdfIntegrator::integratePointCloud(const Transformation& T_G_C,
 
   integration_start_time_ = std::chrono::steady_clock::now();
 
+  std::cout << "\n Starting FastTsdfIntegrator::integratePointCloud \n";
+
   static int64_t reset_counter = 0;
   if ((++reset_counter) >= config_.clear_checks_every_n_frames) {
     reset_counter = 0;
@@ -583,6 +587,8 @@ void FastTsdfIntegrator::integratePointCloud(const Transformation& T_G_C,
   }
 
   integrate_timer.Stop();
+
+  std::cout << "\n Done FastTsdfIntegrator::integratePointCloud \n";
 
   timing::Timer insertion_timer("inserting_missed_blocks");
   updateLayerWithStoredBlocks();

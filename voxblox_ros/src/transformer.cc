@@ -100,8 +100,18 @@ bool Transformer::lookupTransformTf(const std::string& from_frame,
 
   // Previous behavior was just to use the latest transform if the time is in
   // the future. Now we will just wait.
-  if (!tf_listener_.canTransform(to_frame, from_frame_modified,
-                                 time_to_lookup)) {
+  // if (!tf_listener_.canTransform(to_frame, from_frame_modified,
+  //                                time_to_lookup)) 
+
+  int tt = static_cast<int>(time_to_lookup.toSec() / 100.);
+  double ttt = time_to_lookup.toSec() / 100.;
+  double time = (ttt - static_cast<double>(tt)) * 100.;
+
+  std::cout << "\n Looking for TF at time : " << time << "\n";
+
+  if (!tf_listener_.waitForTransform(to_frame, from_frame_modified, time_to_lookup, ros::Duration(0.015), ros::Duration(0.005)))
+  {
+    std::cout << "\n tf_listener_.waitForTransform no TF found... \n";
     return false;
   }
 

@@ -5,7 +5,9 @@ find_package(catkin_simple REQUIRED )
 catkin_simple(ALL_DEPS_REQUIRED)
 
 set(CMAKE_MACOSX_RPATH 0)
-add_definitions(-std=c++11 -Wall -Wextra)
+# add_definitions(-std=c++11 -Wall -Wextra)
+set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_CXX_FLAGS_RELEASE "-std=c++17 -O3 -Wall -march=native")
 
 ############
 # PROTOBUF #
