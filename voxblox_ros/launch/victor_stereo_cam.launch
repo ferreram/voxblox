@@ -8,6 +8,11 @@
 
   <node name="voxblox_node" pkg="voxblox_ros" type="tsdf_server" output="screen" args="--alsologtostderr" clear_params="true">
     <remap from="pointcloud" to="/ov2slam_node/dense_point_cloud"/>
+    <remap from="transform" to="/ov2slam_node/dense_pose"/>
+
+    <param name="use_tf_transforms" value="false" />
+    <param name="pointcloud_queue_size" value="100" />
+    
 
     <param name="tsdf_voxel_size" value="$(arg voxel_size)" />
     <param name="tsdf_voxels_per_side" value="16" />
@@ -16,17 +21,19 @@
     <param name="truncation_distance" value="0.15" />
 
     <param name="color_mode" value="color" />
-    <!-- <param name="use_tf_transforms" value="false" /> -->
     <param name="world_frame" value="world"/>
 
-    <param name="update_mesh_every_n_sec" value="60.0" /> 
+    <param name="update_mesh_every_n_sec" value="5.0" /> 
     <param name="publish_pointclouds" value="true" />
-    <param name="publish_pointclouds_on_update" value="true" />
+    <param name="publish_pointclouds_on_update" value="false" />
 
     <param name="verbose" value="true" />
     <param name="method" value="fast" />
 
-    <param name="min_time_between_msgs_sec" value="0.05" />
+    <param name="integration_order_mode" value="sorted" /> <!-- mixed / sorted (sorted should be better for fast method) -->
+    
+
+    <param name="min_time_between_msgs_sec" value="0.0" />
     <param name="max_ray_length_m" value="10." />
 
     <param name="color_ptcloud_by_weight" value="true" />

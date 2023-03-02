@@ -143,7 +143,7 @@ TsdfServer::TsdfServer(const ros::NodeHandle& nh,
   nh_private_.param("publish_map_every_n_sec", publish_map_every_n_sec,
                     publish_map_every_n_sec);
 
-  if (publish_map_every_n_sec > 0.0) {
+  if (publish_tsdf_map_ && publish_map_every_n_sec > 0.0) {
     publish_map_timer_ =
         nh_private_.createTimer(ros::Duration(publish_map_every_n_sec),
                                 &TsdfServer::publishMapEvent, this);
@@ -390,12 +390,12 @@ void TsdfServer::insertPointcloud(
   if (publish_pointclouds_on_update_) {
     // publishPointclouds();
     publishTsdfSurfacePoints();
-  }
 
-  if (verbose_) {
-    ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
-    ROS_INFO_STREAM(
-        "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
+    if (verbose_) {
+      ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
+      ROS_INFO_STREAM(
+          "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
+    }
   }
 }
 
@@ -513,28 +513,37 @@ void TsdfServer::updateMesh() {
     ROS_INFO("Updating mesh.");
   }
 
-  timing::Timer generate_mesh_timer("mesh/update");
-  constexpr bool only_mesh_updated_blocks = true;
-  constexpr bool clear_updated_flag = true;
-  mesh_integrator_->generateMesh(only_mesh_updated_blocks, clear_updated_flag);
-  generate_mesh_timer.Stop();
+  if (!publish_pointclouds_)
+  {
+    timing::Timer generate_mesh_timer("mesh/update");
+    constexpr bool only_mesh_updated_blocks = true;
+    constexpr bool clear_updated_flag = true;
+    mesh_integrator_->generateMesh(only_mesh_updated_blocks, clear_updated_flag);
+    generate_mesh_timer.Stop();
 
-  timing::Timer publish_mesh_timer("mesh/publish");
+    timing::Timer publish_mesh_timer("mesh/publish");
 
-  voxblox_msgs::Mesh mesh_msg;
-  generateVoxbloxMeshMsg(mesh_layer_, color_mode_, &mesh_msg);
-  mesh_msg.header.frame_id = world_frame_;
-  mesh_pub_.publish(mesh_msg);
+    voxblox_msgs::Mesh mesh_msg;
+    generateVoxbloxMeshMsg(mesh_layer_, color_mode_, &mesh_msg);
+    mesh_msg.header.frame_id = world_frame_;
+    mesh_pub_.publish(mesh_msg);
 
-  if (cache_mesh_) {
-    cached_mesh_msg_ = mesh_msg;
+    if (cache_mesh_) {
+      cached_mesh_msg_ = mesh_msg;
+    }
+
+    publish_mesh_timer.Stop();
   }
-
-  publish_mesh_timer.Stop();
 
   if (publish_pointclouds_ && !publish_pointclouds_on_update_) {
     // publishPointclouds();
     publishTsdfSurfacePoints();
+  }
+
+  if (verbose_) {
+    ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
+    ROS_INFO_STREAM(
+        "Layer memory: " << tsdf_map_->getTsdfLayer().getMemorySize());
   }
 }
 

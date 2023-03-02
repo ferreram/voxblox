@@ -28,6 +28,12 @@ Transformer::Transformer(const ros::NodeHandle& nh,
   // Transform settings.
   nh_private_.param("use_tf_transforms", use_tf_transforms_,
                     use_tf_transforms_);
+
+  int transforms_queue_size = 100;
+
+  nh_private_.param("pointcloud_queue_size", transforms_queue_size,
+                    transforms_queue_size);
+
   // If we use topic transforms, we have 2 parts: a dynamic transform from a
   // topic and a static transform from parameters.
   // Static transform should be T_G_D (where D is whatever sensor the
@@ -36,7 +42,7 @@ Transformer::Transformer(const ros::NodeHandle& nh,
   // specify T_C_D and set invert_static_tranform to true.
   if (!use_tf_transforms_) {
     transform_sub_ =
-        nh_.subscribe("transform", 40, &Transformer::transformCallback, this);
+        nh_.subscribe("transform", transforms_queue_size*2, &Transformer::transformCallback, this);
     // Retrieve T_D_C from params.
     XmlRpc::XmlRpcValue T_B_D_xml;
     // TODO(helenol): split out into a function to avoid duplication.

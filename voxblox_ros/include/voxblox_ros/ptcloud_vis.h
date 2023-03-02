@@ -62,11 +62,9 @@ void createColorPointcloudFromLayer(
   layer.getAllAllocatedBlocks(&blocks);
 
   // Cache layer settings.
-  size_t vps = layer.voxels_per_side();
-  size_t num_voxels_per_block = vps * vps * vps;
+  static const size_t vps = layer.voxels_per_side();
+  const size_t num_voxels_per_block = vps * vps * vps;
 
-  // Temp variables.
-  Color color;
   // Iterate over all blocks.
   for (const BlockIndex& index : blocks) {
     // Iterate over all voxels in said blocks.
@@ -74,7 +72,9 @@ void createColorPointcloudFromLayer(
 
     for (size_t linear_index = 0; linear_index < num_voxels_per_block;
          ++linear_index) {
-      Point coord = block.computeCoordinatesFromLinearIndex(linear_index);
+      // Temp variables.
+      Color color;
+      const Point coord = block.computeCoordinatesFromLinearIndex(linear_index);
       if (vis_function(block.getVoxelByLinearIndex(linear_index), coord,
                        &color)) {
         pcl::PointXYZRGB point;
